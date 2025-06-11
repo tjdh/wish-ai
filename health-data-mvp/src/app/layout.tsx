@@ -15,6 +15,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "arx - Your Data, Your Choice",
   description: "Connect your wearable, contribute to science, and earn rewards while controlling exactly what you share.",
+  icons: { icon: '/images/favicon.svg' },
 };
 
 export default function RootLayout({
