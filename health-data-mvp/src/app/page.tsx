@@ -131,7 +131,7 @@ export default function LandingPage() {
             <Link href="/signup">
               <Button
                 size="lg"
-                className="px-8 py-6 text-lg font-semibold bg-[#C8FAFF] text-gray-900 hover:bg-[#9be9ef]"
+                className="px-8 py-6 text-lg font-semibold bg-[#C8FAFF] text-gray-900 hover:bg-[#9be9ef] transition-all duration-300 ease-out hover:scale-101 hover:shadow-lg"
               >
                 Get Started
               </Button>
@@ -140,7 +140,7 @@ export default function LandingPage() {
               <Button
                 variant="outline"
                 size="lg"
-                className="px-8 py-6 text-lg border-2 border-[#00818A] text-[#00818A] hover:bg-[#C8FAFF]/20"
+                className="px-8 py-6 text-lg border-2 border-[#00818A] text-[#00818A] hover:bg-[#C8FAFF]/20 transition-all duration-300 ease-out hover:scale-101 hover:shadow-lg hover:border-[#00636a]"
               >
                 For Researchers
               </Button>
@@ -153,7 +153,7 @@ export default function LandingPage() {
       <section id="contributors" className="container mx-auto px-4 py-24">
         <h2 className="text-3xl font-bold mb-12 text-center text-[#00818A]">Contributors</h2>
         <div className="grid gap-6 md:grid-cols-3">
-          <Card className="group shadow-lg hover:shadow-xl transition-all duration-500 ease-out hover:-translate-y-1 hover:scale-[1.01]">
+          <Card className="group shadow-lg hover:shadow-xl transition-all duration-500 ease-out hover:-translate-y-2 hover:scale-[1.01]">
             <CardHeader>
               <ArrowRight className="w-8 h-8 mb-4 text-[#00818A] transition-transform duration-300 group-hover:translate-x-1" />
               <CardTitle>Link Your Device</CardTitle>
@@ -162,7 +162,7 @@ export default function LandingPage() {
               Connect Apple Watch or Fitbit in two clicks. You decide what metrics to share.
             </CardContent>
           </Card>
-          <Card className="group shadow-lg hover:shadow-xl transition-all duration-500 ease-out hover:-translate-y-1 hover:scale-[1.01]">
+          <Card className="group shadow-lg hover:shadow-xl transition-all duration-500 ease-out hover:-translate-y-2 hover:scale-[1.01]">
             <CardHeader>
               <BarChart3 className="w-8 h-8 mb-4 text-[#00818A] transition-transform duration-300 group-hover:scale-110" />
               <CardTitle>Earn Points Daily</CardTitle>
@@ -171,7 +171,7 @@ export default function LandingPage() {
               Steps, heart rate, sleep—anything you share can be redeemed for amazing rewards.
             </CardContent>
           </Card>
-          <Card className="group shadow-lg hover:shadow-xl transition-all duration-500 ease-out hover:-translate-y-1 hover:scale-[1.01]">
+          <Card className="group shadow-lg hover:shadow-xl transition-all duration-500 ease-out hover:-translate-y-2 hover:scale-[1.01]">
             <CardHeader>
               <ArrowRight className="w-8 h-8 mb-4 text-[#00818A] transition-transform duration-300 group-hover:translate-x-1" />
               <CardTitle>Stay in Control</CardTitle>
@@ -200,7 +200,7 @@ export default function LandingPage() {
               <Link href="/researchers">
                 <Button
                   size="lg"
-                  className="mt-4 bg-[#00818A] hover:bg-[#00636a] text-white px-8 py-6"
+                  className="mt-4 bg-[#00818A] hover:bg-[#00636a] text-white px-8 py-6 transition-all duration-300 ease-out hover:scale-101 hover:shadow-lg"
                 >
                   Request Access
                 </Button>
