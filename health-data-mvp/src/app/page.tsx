@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from "@/components/ui/button";
@@ -11,6 +13,40 @@ import { ArrowRight, BarChart3 } from "lucide-react";
  * Light‑mode implementation only; dark mode can be added later.
  */
 export default function LandingPage() {
+  // Easing function for smooth acceleration and deceleration
+  const easeInOutCubic = (t: number): number => {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  };
+
+  const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
+    e.preventDefault();
+    const element = document.getElementById(targetId);
+    if (!element) return;
+
+    const targetPosition = element.getBoundingClientRect().top + window.pageYOffset;
+    const startPosition = window.pageYOffset;
+    const distance = targetPosition - startPosition;
+    const duration = 1200; // Duration in milliseconds
+    let start: number | null = null;
+
+    const animation = (currentTime: number) => {
+      if (start === null) start = currentTime;
+      const timeElapsed = currentTime - start;
+      const progress = Math.min(timeElapsed / duration, 1);
+      
+      // Apply easing function
+      const easeProgress = easeInOutCubic(progress);
+      
+      window.scrollTo(0, startPosition + distance * easeProgress);
+
+      if (timeElapsed < duration) {
+        requestAnimationFrame(animation);
+      }
+    };
+
+    requestAnimationFrame(animation);
+  };
+
   return (
     <main className="min-h-screen flex flex-col bg-white text-gray-900">
       {/* Hero banner */}
@@ -40,7 +76,7 @@ export default function LandingPage() {
                 Get Started
               </Button>
             </Link>
-            <Link href="#researchers">
+            <Link href="#researchers" onClick={(e) => scrollToSection(e, 'researchers')}>
               <Button
                 variant="outline"
                 size="lg"
@@ -63,7 +99,7 @@ export default function LandingPage() {
               <CardTitle>Link Your Device</CardTitle>
             </CardHeader>
             <CardContent className="text-gray-600">
-              Connect Apple Watch or Fitbit in two clicks. You decide what metrics to share.
+              Connect Apple Watch or Fitbit in two clicks. You decide what metrics to share.
             </CardContent>
           </Card>
           <Card className="shadow-lg hover:shadow-xl transition-shadow">
@@ -125,7 +161,7 @@ export default function LandingPage() {
 
       <footer className="border-t py-10 bg-white">
         <div className="container mx-auto px-4 text-center text-sm text-gray-500">
-          &copy; {new Date().getFullYear()} arx. All rights reserved.
+          &copy; {new Date().getFullYear()} arx. All rights reserved.
         </div>
       </footer>
     </main>
