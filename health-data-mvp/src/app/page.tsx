@@ -12,12 +12,7 @@ import { ArrowRight, BarChart3 } from "lucide-react";
  *  - Accent‑dark: #00818A
  * Light‑mode implementation only; dark mode can be added later.
  */
-export default function LandingPage() {
-  // Easing function for smooth acceleration and deceleration
-  const easeInOutCubic = (t: number): number => {
-    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-  };
-  
+export default function LandingPage() {  
   // Faster easing with steeper acceleration/deceleration
   const easeInOutQuart = (t: number): number => {
     return t < 0.5 ? 8 * t * t * t * t : 1 - Math.pow(-2 * t + 2, 4) / 2;
