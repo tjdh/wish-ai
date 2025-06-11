@@ -17,34 +17,99 @@ export default function LandingPage() {
   const easeInOutCubic = (t: number): number => {
     return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
   };
+  
+  // Faster easing with steeper acceleration/deceleration
+  const easeInOutQuart = (t: number): number => {
+    return t < 0.5 ? 8 * t * t * t * t : 1 - Math.pow(-2 * t + 2, 4) / 2;
+  };
+
+  // Reference to store animation frame ID
+  let scrollAnimationId: number | null = null;
 
   const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
     e.preventDefault();
+    
+    // Cancel any existing animation
+    if (scrollAnimationId) {
+      cancelAnimationFrame(scrollAnimationId);
+      scrollAnimationId = null;
+    }
+    
     const element = document.getElementById(targetId);
     if (!element) return;
 
-    const targetPosition = element.getBoundingClientRect().top + window.pageYOffset;
     const startPosition = window.pageYOffset;
+    const elementRect = element.getBoundingClientRect();
+    const elementTop = elementRect.top + startPosition;
+    
+    // More robust calculation of document height
+    const body = document.body;
+    const html = document.documentElement;
+    const documentHeight = Math.max(
+      body.scrollHeight,
+      body.offsetHeight,
+      html.clientHeight,
+      html.scrollHeight,
+      html.offsetHeight
+    );
+    
+    const windowHeight = window.innerHeight;
+    const maxScrollPosition = Math.max(0, documentHeight - windowHeight);
+    
+    // If we want to scroll to elementTop, but max we can scroll is maxScrollPosition
+    const targetPosition = Math.min(elementTop, maxScrollPosition);
     const distance = targetPosition - startPosition;
-    const duration = 1200; // Duration in milliseconds
-    let start: number | null = null;
+    
+    // Don't animate if distance is too small or we're already there
+    if (Math.abs(distance) < 1) return;
+    
+    const duration = 1200;
+    let startTime: number | null = null;
 
-    const animation = (currentTime: number) => {
-      if (start === null) start = currentTime;
-      const timeElapsed = currentTime - start;
-      const progress = Math.min(timeElapsed / duration, 1);
-      
-      // Apply easing function
-      const easeProgress = easeInOutCubic(progress);
-      
-      window.scrollTo(0, startPosition + distance * easeProgress);
-
-      if (timeElapsed < duration) {
-        requestAnimationFrame(animation);
+    // Function to cancel the scroll animation
+    const cancelScrollAnimation = () => {
+      if (scrollAnimationId) {
+        cancelAnimationFrame(scrollAnimationId);
+        scrollAnimationId = null;
+        // Remove the wheel listener once animation is cancelled
+        window.removeEventListener('wheel', cancelScrollAnimation);
       }
     };
 
-    requestAnimationFrame(animation);
+    // Add wheel event listener to detect user scroll
+    window.addEventListener('wheel', cancelScrollAnimation, { passive: true });
+
+    const performScroll = (timestamp: number) => {
+      if (!startTime) {
+        startTime = timestamp;
+      }
+      
+      const elapsed = timestamp - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      // Apply easing to progress
+      const easedProgress = easeInOutQuart(progress);
+      
+      // Calculate new position
+      const currentTargetPosition = startPosition + (distance * easedProgress);
+      
+      // Scroll to the new position
+      window.scrollTo({
+        top: currentTargetPosition,
+        behavior: 'auto' // Use auto to avoid conflicts
+      });
+      
+      // Check if animation should continue
+      if (progress < 1) {
+        scrollAnimationId = requestAnimationFrame(performScroll);
+      } else {
+        scrollAnimationId = null;
+        // Remove the wheel listener when animation completes naturally
+        window.removeEventListener('wheel', cancelScrollAnimation);
+      }
+    };
+
+    scrollAnimationId = requestAnimationFrame(performScroll);
   };
 
   return (
@@ -91,7 +156,7 @@ export default function LandingPage() {
 
       {/* Contributors */}
       <section id="contributors" className="container mx-auto px-4 py-24">
-        <h2 className="text-3xl font-bold mb-12 text-center text-[#00818A]">For Contributors</h2>
+        <h2 className="text-3xl font-bold mb-12 text-center text-[#00818A]">Contributors</h2>
         <div className="grid gap-6 md:grid-cols-3">
           <Card className="shadow-lg hover:shadow-xl transition-shadow">
             <CardHeader>
@@ -126,7 +191,7 @@ export default function LandingPage() {
       {/* Researchers */}
       <section id="researchers" className="bg-[#C8FAFF]/20">
         <div className="container mx-auto px-4 py-24">
-          <h2 className="text-3xl font-bold mb-12 text-center text-[#00818A]">For Researchers</h2>
+          <h2 className="text-3xl font-bold mb-12 text-center text-[#00818A]">Researchers</h2>
           <div className="flex flex-col md:flex-row items-center justify-between gap-10">
             <div className="flex-1 space-y-6">
               <h3 className="text-xl font-semibold">Quality, Consent‑backed Datasets</h3>
