@@ -118,19 +118,42 @@ export default function SignupPage() {
     setIsLoading(true);
     
     try {
-      // Here you would integrate with your backend/Supabase
-      // For now, we'll simulate an API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Import the signUp function dynamically to avoid SSR issues
+      const { signUp, AuthError } = await import('@/lib/auth');
       
-      // Mock successful signup
-      console.log('User signup data:', formData);
+      const result = await signUp({
+        email: formData.email,
+        password: formData.password,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        dateOfBirth: formData.dateOfBirth,
+        location: formData.location,
+        agreeToTerms: formData.agreeToTerms,
+        agreeToDataSharing: formData.agreeToDataSharing,
+        marketingEmails: formData.marketingEmails,
+      });
+
+      if (result.needsEmailConfirmation) {
+        // Redirect to email confirmation page
+        window.location.href = '/confirm-email';
+      } else {
+        // User is immediately signed in, redirect to dashboard
+        window.location.href = '/dashboard';
+      }
       
-      // Redirect to dashboard or onboarding
-      window.location.href = '/dashboard';
-      
-    } catch (error) {
+    } catch (error: any) {
       console.error('Signup error:', error);
-      setErrors({ submit: 'Something went wrong. Please try again.' });
+      
+      // Handle specific auth errors
+      if (error.message?.includes('already registered')) {
+        setErrors({ submit: 'An account with this email already exists. Please sign in instead.' });
+      } else if (error.message?.includes('Invalid email')) {
+        setErrors({ submit: 'Please enter a valid email address.' });
+      } else if (error.message?.includes('Password should be at least')) {
+        setErrors({ submit: 'Password must be at least 6 characters long.' });
+      } else {
+        setErrors({ submit: error.message || 'Something went wrong. Please try again.' });
+      }
     } finally {
       setIsLoading(false);
     }
