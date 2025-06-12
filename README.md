@@ -1,2 +1,2 @@
 # wish-ai
-playground for "arakos" backward mvp
+playground for arx mvp
