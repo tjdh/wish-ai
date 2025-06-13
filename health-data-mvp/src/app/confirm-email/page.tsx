@@ -21,22 +21,7 @@ export default function ConfirmEmailPage() {
       const supabase = createClient();
       
       try {
-        // Check if user is already authenticated
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (session) {
-          // User is already confirmed and logged in
-          router.push('/dashboard');
-          return;
-        }
-
-        // Get the user from the current session/signup flow
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          setUserEmail(user.email || '');
-        }
-
-        // Check URL for confirmation token
+        // First check URL for confirmation token - this takes priority
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         const accessToken = hashParams.get('access_token');
         const type = hashParams.get('type');
@@ -59,7 +44,27 @@ export default function ConfirmEmailPage() {
           setTimeout(() => {
             router.push('/dashboard');
           }, 2000);
+          return; // Exit early
         }
+
+        // If no confirmation token in URL, check if user exists but don't redirect
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (user?.email) {
+          setUserEmail(user.email);
+          
+          // Check if email is already confirmed
+          if (user.email_confirmed_at) {
+            // Email is already confirmed, redirect to dashboard
+            router.push('/dashboard');
+            return;
+          }
+          // Otherwise, stay on this page and show the "check your email" message
+        } else {
+          // No user found, they might have been logged out or session expired
+          // Stay on this page to show the confirmation message
+        }
+
       } catch (err) {
         console.error('Email confirmation error:', err);
         setError('There was an error confirming your email. Please try again.');
@@ -72,7 +77,10 @@ export default function ConfirmEmailPage() {
   }, [router]);
 
   const handleResendEmail = async () => {
-    if (!userEmail) return;
+    if (!userEmail) {
+      alert('Please enter your email address to resend the confirmation.');
+      return;
+    }
 
     setIsLoading(true);
     const supabase = createClient();
@@ -206,14 +214,37 @@ export default function ConfirmEmailPage() {
                     </p>
                   </div>
 
-                  <Button 
-                    onClick={handleResendEmail}
-                    variant="outline"
-                    disabled={!userEmail || isLoading}
-                    className="w-full py-6 text-lg border-[#00818A] text-[#00818A] hover:bg-[#C8FAFF]/20"
-                  >
-                    Resend Confirmation Email
-                  </Button>
+                  <div className="space-y-3">
+                    {userEmail && (
+                      <Button 
+                        onClick={handleResendEmail}
+                        variant="outline"
+                        disabled={isLoading}
+                        className="w-full py-6 text-lg border-[#00818A] text-[#00818A] hover:bg-[#C8FAFF]/20"
+                      >
+                        Resend Confirmation Email
+                      </Button>
+                    )}
+                    
+                    {!userEmail && (
+                      <div className="space-y-2">
+                        <input
+                          type="email"
+                          placeholder="Enter your email"
+                          className="w-full px-4 py-3 border rounded-lg"
+                          onChange={(e) => setUserEmail(e.target.value)}
+                        />
+                        <Button 
+                          onClick={handleResendEmail}
+                          variant="outline"
+                          disabled={!userEmail || isLoading}
+                          className="w-full py-6 text-lg border-[#00818A] text-[#00818A] hover:bg-[#C8FAFF]/20"
+                        >
+                          Resend Confirmation Email
+                        </Button>
+                      </div>
+                    )}
+                  </div>
 
                   <div className="text-center">
                     <Link 
