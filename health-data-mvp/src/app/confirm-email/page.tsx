@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -248,7 +248,7 @@ export default function ConfirmEmailPage() {
                 <>
                   <div className="space-y-4 text-center">
                     <p className="text-gray-600">
-                      We've sent a confirmation email to:
+                      We&apos;ve sent a confirmation email to:
                     </p>
                     <p className="font-semibold text-lg text-gray-900">
                       {userEmail || 'your email address'}
@@ -260,7 +260,7 @@ export default function ConfirmEmailPage() {
 
                   <div className="bg-blue-50 rounded-lg p-4">
                     <p className="text-sm text-blue-800">
-                      <strong>Didn't receive the email?</strong> Check your spam folder or use the form below to resend.
+                      <strong>Didn&apos;t receive the email?</strong> Check your spam folder or use the form below to resend.
                     </p>
                   </div>
 
