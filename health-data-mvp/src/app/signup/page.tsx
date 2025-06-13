@@ -166,7 +166,7 @@ export default function SignupPage() {
         <div className="flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 text-[#00818A] hover:text-[#00636a] transition-colors">
             <ArrowLeft className="w-5 h-5" />
-            <span>Back to Home</span>
+            <span>Back</span>
           </Link>
           <Image
             src="/images/arx-logo.svg"

@@ -24,6 +24,7 @@ export async function signUp(data: SignUpData) {
 
   try {
     // Sign up the user with Supabase Auth
+    // The metadata will be available in the trigger via NEW.raw_user_meta_data
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
@@ -47,27 +48,8 @@ export async function signUp(data: SignUpData) {
       throw new AuthError('Failed to create user account')
     }
 
-    // Update the profile with additional data
-    const profileData = {
-      first_name: data.firstName,
-      last_name: data.lastName,
-      date_of_birth: data.dateOfBirth,
-      location: data.location,
-      marketing_emails: data.marketingEmails,
-      consent_data_sharing: data.agreeToDataSharing,
-      display_name: `${data.firstName} ${data.lastName}`, // Add display_name for your existing schema
-    }
-
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .update(profileData)
-      .eq('id', authData.user.id)
-
-    if (profileError) {
-      console.error('Profile update error:', profileError)
-      // Don't throw here as the user account was created successfully
-    }
-
+    // The trigger will handle creating/updating the profile
+    
     return {
       user: authData.user,
       session: authData.session,

@@ -1,0 +1,234 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Image from 'next/image';
+import Link from 'next/link';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Mail, CheckCircle, AlertCircle, ArrowRight } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
+
+export default function ConfirmEmailPage() {
+  const router = useRouter();
+  const [emailConfirmed, setEmailConfirmed] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string>('');
+
+  useEffect(() => {
+    const checkEmailConfirmation = async () => {
+      const supabase = createClient();
+      
+      try {
+        // Check if user is already authenticated
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session) {
+          // User is already confirmed and logged in
+          router.push('/dashboard');
+          return;
+        }
+
+        // Get the user from the current session/signup flow
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          setUserEmail(user.email || '');
+        }
+
+        // Check URL for confirmation token
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const accessToken = hashParams.get('access_token');
+        const type = hashParams.get('type');
+
+        if (accessToken && type === 'signup') {
+          // Email confirmed via link
+          setEmailConfirmed(true);
+          
+          // Set up the session
+          const { error: sessionError } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: hashParams.get('refresh_token') || '',
+          });
+
+          if (sessionError) {
+            throw sessionError;
+          }
+
+          // Redirect to dashboard after a brief delay
+          setTimeout(() => {
+            router.push('/dashboard');
+          }, 2000);
+        }
+      } catch (err) {
+        console.error('Email confirmation error:', err);
+        setError('There was an error confirming your email. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkEmailConfirmation();
+  }, [router]);
+
+  const handleResendEmail = async () => {
+    if (!userEmail) return;
+
+    setIsLoading(true);
+    const supabase = createClient();
+
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: userEmail,
+      });
+
+      if (error) throw error;
+
+      // Show success message
+      alert('Confirmation email sent! Please check your inbox.');
+    } catch (err) {
+      console.error('Resend email error:', err);
+      setError('Failed to resend confirmation email. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <main className="min-h-screen bg-gradient-to-b from-[#C8FAFF]/40 to-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#00818A] mx-auto"></div>
+          <p className="mt-4 text-gray-600">Checking email confirmation...</p>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="min-h-screen bg-gradient-to-b from-[#C8FAFF]/40 to-white">
+      {/* Header */}
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex items-center justify-center">
+          <Image
+            src="/images/arx-logo.svg"
+            alt="arx logo"
+            width={120}
+            height={40}
+            priority
+          />
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-md mx-auto">
+          <Card className="shadow-xl border-0">
+            <CardHeader className="text-center pb-6">
+              <div className="mx-auto mb-4 w-20 h-20 rounded-full flex items-center justify-center">
+                {emailConfirmed ? (
+                  <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center">
+                    <CheckCircle className="w-10 h-10 text-green-600" />
+                  </div>
+                ) : error ? (
+                  <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center">
+                    <AlertCircle className="w-10 h-10 text-red-600" />
+                  </div>
+                ) : (
+                  <div className="w-20 h-20 bg-[#C8FAFF] rounded-full flex items-center justify-center">
+                    <Mail className="w-10 h-10 text-[#00818A]" />
+                  </div>
+                )}
+              </div>
+              <CardTitle className="text-2xl font-bold text-gray-900">
+                {emailConfirmed 
+                  ? 'Email Confirmed!' 
+                  : error 
+                  ? 'Confirmation Error' 
+                  : 'Check Your Email'
+                }
+              </CardTitle>
+            </CardHeader>
+
+            <CardContent className="space-y-6">
+              {emailConfirmed ? (
+                <>
+                  <p className="text-center text-gray-600">
+                    Your email has been successfully confirmed. You'll be redirected to your dashboard in a moment...
+                  </p>
+                  <Button 
+                    onClick={() => router.push('/dashboard')}
+                    className="w-full bg-[#00818A] hover:bg-[#00636a] text-white py-6 text-lg font-semibold"
+                  >
+                    Go to Dashboard
+                    <ArrowRight className="w-5 h-5 ml-2" />
+                  </Button>
+                </>
+              ) : error ? (
+                <>
+                  <p className="text-center text-red-600">{error}</p>
+                  <div className="space-y-3">
+                    <Button 
+                      onClick={handleResendEmail}
+                      disabled={!userEmail || isLoading}
+                      className="w-full bg-[#00818A] hover:bg-[#00636a] text-white py-6 text-lg font-semibold"
+                    >
+                      Resend Confirmation Email
+                    </Button>
+                    <Link href="/signin" className="block">
+                      <Button 
+                        variant="outline"
+                        className="w-full py-6 text-lg border-[#00818A] text-[#00818A] hover:bg-[#C8FAFF]/20"
+                      >
+                        Back to Sign In
+                      </Button>
+                    </Link>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="space-y-4 text-center">
+                    <p className="text-gray-600">
+                      We've sent a confirmation email to:
+                    </p>
+                    <p className="font-semibold text-lg text-gray-900">
+                      {userEmail || 'your email address'}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Please check your inbox and click the confirmation link to activate your account.
+                    </p>
+                  </div>
+
+                  <div className="bg-blue-50 rounded-lg p-4">
+                    <p className="text-sm text-blue-800">
+                      <strong>Didn't receive the email?</strong> Check your spam folder or click the button below to resend.
+                    </p>
+                  </div>
+
+                  <Button 
+                    onClick={handleResendEmail}
+                    variant="outline"
+                    disabled={!userEmail || isLoading}
+                    className="w-full py-6 text-lg border-[#00818A] text-[#00818A] hover:bg-[#C8FAFF]/20"
+                  >
+                    Resend Confirmation Email
+                  </Button>
+
+                  <div className="text-center">
+                    <Link 
+                      href="/signin" 
+                      className="text-sm text-[#00818A] hover:underline"
+                    >
+                      Back to Sign In
+                    </Link>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </main>
+  );
+}
