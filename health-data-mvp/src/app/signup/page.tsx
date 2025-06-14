@@ -60,8 +60,8 @@ export default function SignupPage() {
     }
     if (!formData.password) {
       newErrors.password = 'Password is required';
-    } else if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters';
+    } else if (formData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
     }
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
@@ -76,29 +76,22 @@ export default function SignupPage() {
 
     if (!formData.dateOfBirth) {
       newErrors.dateOfBirth = 'Date of birth is required';
-    } else {
-      const birthDate = new Date(formData.dateOfBirth);
-      const today = new Date();
-      const age = today.getFullYear() - birthDate.getFullYear();
-      if (age < 13) {
-        newErrors.dateOfBirth = 'You must be at least 13 years old to sign up';
-      }
     }
     if (!formData.location.trim()) {
-      newErrors.location = 'Location is required for health data insights';
+      newErrors.location = 'Location is required';
     }
     if (!formData.agreeToTerms) {
-      newErrors.agreeToTerms = 'You must agree to the Terms of Service';
+      newErrors.agreeToTerms = 'You must agree to the terms and conditions';
     }
     if (!formData.agreeToDataSharing) {
-      newErrors.agreeToDataSharing = 'Data sharing consent is required to participate';
+      newErrors.agreeToDataSharing = 'You must agree to data sharing for research';
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleInputChange = (field: keyof FormData, value: string | boolean) => {
+  const updateFormData = (field: keyof FormData, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     // Clear error for this field when user starts typing
     if (errors[field]) {
@@ -119,7 +112,7 @@ export default function SignupPage() {
     
     try {
       // Import the signUp function dynamically to avoid SSR issues
-      const { signUp, AuthError } = await import('@/lib/auth');
+      const { signUp } = await import('@/lib/auth');
       
       const result = await signUp({
         email: formData.email,
@@ -141,18 +134,20 @@ export default function SignupPage() {
         window.location.href = '/dashboard';
       }
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Signup error:', error);
       
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      
       // Handle specific auth errors
-      if (error.message?.includes('already registered')) {
+      if (errorMessage.includes('already registered')) {
         setErrors({ submit: 'An account with this email already exists. Please sign in instead.' });
-      } else if (error.message?.includes('Invalid email')) {
+      } else if (errorMessage.includes('Invalid email')) {
         setErrors({ submit: 'Please enter a valid email address.' });
-      } else if (error.message?.includes('Password should be at least')) {
+      } else if (errorMessage.includes('Password should be at least')) {
         setErrors({ submit: 'Password must be at least 6 characters long.' });
       } else {
-        setErrors({ submit: error.message || 'Something went wrong. Please try again.' });
+        setErrors({ submit: errorMessage || 'Something went wrong. Please try again.' });
       }
     } finally {
       setIsLoading(false);
@@ -221,36 +216,37 @@ export default function SignupPage() {
 
             <CardContent className="space-y-6">
               {step === 1 ? (
-                // Step 1: Basic Account Info
                 <>
+                  {/* Step 1: Account Details */}
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="firstName">First Name</Label>
-                      <Input
-                        id="firstName"
-                        type="text"
-                        placeholder="John"
-                        value={formData.firstName}
-                        onChange={(e) => handleInputChange('firstName', e.target.value)}
-                        className={errors.firstName ? 'border-red-500' : ''}
-                      />
-                      {errors.firstName && (
-                        <p className="text-sm text-red-500">{errors.firstName}</p>
-                      )}
+                      <div className="relative">
+                        <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                        <Input
+                          id="firstName"
+                          placeholder="John"
+                          className="pl-10"
+                          value={formData.firstName}
+                          onChange={(e) => updateFormData('firstName', e.target.value)}
+                        />
+                      </div>
+                      {errors.firstName && <p className="text-sm text-red-600">{errors.firstName}</p>}
                     </div>
+
                     <div className="space-y-2">
                       <Label htmlFor="lastName">Last Name</Label>
-                      <Input
-                        id="lastName"
-                        type="text"
-                        placeholder="Doe"
-                        value={formData.lastName}
-                        onChange={(e) => handleInputChange('lastName', e.target.value)}
-                        className={errors.lastName ? 'border-red-500' : ''}
-                      />
-                      {errors.lastName && (
-                        <p className="text-sm text-red-500">{errors.lastName}</p>
-                      )}
+                      <div className="relative">
+                        <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                        <Input
+                          id="lastName"
+                          placeholder="Doe"
+                          className="pl-10"
+                          value={formData.lastName}
+                          onChange={(e) => updateFormData('lastName', e.target.value)}
+                        />
+                      </div>
+                      {errors.lastName && <p className="text-sm text-red-600">{errors.lastName}</p>}
                     </div>
                   </div>
 
@@ -262,14 +258,12 @@ export default function SignupPage() {
                         id="email"
                         type="email"
                         placeholder="john@example.com"
-                        className={`pl-10 ${errors.email ? 'border-red-500' : ''}`}
+                        className="pl-10"
                         value={formData.email}
-                        onChange={(e) => handleInputChange('email', e.target.value)}
+                        onChange={(e) => updateFormData('email', e.target.value)}
                       />
                     </div>
-                    {errors.email && (
-                      <p className="text-sm text-red-500">{errors.email}</p>
-                    )}
+                    {errors.email && <p className="text-sm text-red-600">{errors.email}</p>}
                   </div>
 
                   <div className="space-y-2">
@@ -279,15 +273,13 @@ export default function SignupPage() {
                       <Input
                         id="password"
                         type="password"
-                        placeholder="Minimum 8 characters"
-                        className={`pl-10 ${errors.password ? 'border-red-500' : ''}`}
+                        placeholder="Create a strong password"
+                        className="pl-10"
                         value={formData.password}
-                        onChange={(e) => handleInputChange('password', e.target.value)}
+                        onChange={(e) => updateFormData('password', e.target.value)}
                       />
                     </div>
-                    {errors.password && (
-                      <p className="text-sm text-red-500">{errors.password}</p>
-                    )}
+                    {errors.password && <p className="text-sm text-red-600">{errors.password}</p>}
                   </div>
 
                   <div className="space-y-2">
@@ -297,15 +289,13 @@ export default function SignupPage() {
                       <Input
                         id="confirmPassword"
                         type="password"
-                        placeholder="Re-enter your password"
-                        className={`pl-10 ${errors.confirmPassword ? 'border-red-500' : ''}`}
+                        placeholder="Confirm your password"
+                        className="pl-10"
                         value={formData.confirmPassword}
-                        onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                        onChange={(e) => updateFormData('confirmPassword', e.target.value)}
                       />
                     </div>
-                    {errors.confirmPassword && (
-                      <p className="text-sm text-red-500">{errors.confirmPassword}</p>
-                    )}
+                    {errors.confirmPassword && <p className="text-sm text-red-600">{errors.confirmPassword}</p>}
                   </div>
 
                   <Button 
@@ -316,8 +306,8 @@ export default function SignupPage() {
                   </Button>
                 </>
               ) : (
-                // Step 2: Profile & Consent
                 <>
+                  {/* Step 2: Profile Setup */}
                   <div className="space-y-2">
                     <Label htmlFor="dateOfBirth">Date of Birth</Label>
                     <div className="relative">
@@ -325,98 +315,71 @@ export default function SignupPage() {
                       <Input
                         id="dateOfBirth"
                         type="date"
-                        className={`pl-10 ${errors.dateOfBirth ? 'border-red-500' : ''}`}
+                        className="pl-10"
                         value={formData.dateOfBirth}
-                        onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
+                        onChange={(e) => updateFormData('dateOfBirth', e.target.value)}
                       />
                     </div>
-                    {errors.dateOfBirth && (
-                      <p className="text-sm text-red-500">{errors.dateOfBirth}</p>
-                    )}
+                    {errors.dateOfBirth && <p className="text-sm text-red-600">{errors.dateOfBirth}</p>}
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="location">Location (City, State/Country)</Label>
+                    <Label htmlFor="location">Location</Label>
                     <div className="relative">
                       <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                       <Input
                         id="location"
-                        type="text"
-                        placeholder="New York, NY"
-                        className={`pl-10 ${errors.location ? 'border-red-500' : ''}`}
+                        placeholder="City, State/Country"
+                        className="pl-10"
                         value={formData.location}
-                        onChange={(e) => handleInputChange('location', e.target.value)}
+                        onChange={(e) => updateFormData('location', e.target.value)}
                       />
                     </div>
-                    {errors.location && (
-                      <p className="text-sm text-red-500">{errors.location}</p>
-                    )}
-                    <p className="text-xs text-gray-500">
-                      Used for health insights and local research opportunities
-                    </p>
+                    {errors.location && <p className="text-sm text-red-600">{errors.location}</p>}
                   </div>
 
-                  {/* Consent Section */}
-                  <div className="space-y-4 pt-4 border-t">
-                    <h4 className="font-semibold text-gray-900 flex items-center gap-2">
-                      <Activity className="w-4 h-4 text-[#00818A]" />
-                      Data Sharing Preferences
-                    </h4>
-                    
-                    <div className="space-y-4">
-                      <div className="flex items-start space-x-3">
-                        <Checkbox
-                          id="agreeToTerms"
-                          checked={formData.agreeToTerms}
-                          onCheckedChange={(checked) => handleInputChange('agreeToTerms', !!checked)}
-                          className="mt-1"
-                        />
-                        <div className="space-y-1">
-                          <Label htmlFor="agreeToTerms" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                            I agree to the <Link href="/terms" className="text-[#00818A] hover:underline">Terms of Service</Link> and <Link href="/privacy" className="text-[#00818A] hover:underline">Privacy Policy</Link>
-                          </Label>
-                          {errors.agreeToTerms && (
-                            <p className="text-sm text-red-500">{errors.agreeToTerms}</p>
-                          )}
-                        </div>
-                      </div>
+                  {/* Agreements */}
+                  <div className="space-y-4 pt-4">
+                    <div className="flex items-start space-x-3">
+                      <Checkbox
+                        id="agreeToTerms"
+                        checked={formData.agreeToTerms}
+                        onCheckedChange={(checked) => updateFormData('agreeToTerms', checked as boolean)}
+                      />
+                      <Label htmlFor="agreeToTerms" className="text-sm leading-5">
+                        I agree to the{' '}
+                        <Link href="/terms" className="text-[#00818A] hover:underline">
+                          Terms and Conditions
+                        </Link>{' '}
+                        and{' '}
+                        <Link href="/privacy" className="text-[#00818A] hover:underline">
+                          Privacy Policy
+                        </Link>
+                      </Label>
+                    </div>
+                    {errors.agreeToTerms && <p className="text-sm text-red-600 ml-7">{errors.agreeToTerms}</p>}
 
-                      <div className="flex items-start space-x-3">
-                        <Checkbox
-                          id="agreeToDataSharing"
-                          checked={formData.agreeToDataSharing}
-                          onCheckedChange={(checked) => handleInputChange('agreeToDataSharing', !!checked)}
-                          className="mt-1"
-                        />
-                        <div className="space-y-1">
-                          <Label htmlFor="agreeToDataSharing" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                            I consent to sharing my de-identified health data with approved researchers
-                          </Label>
-                          <p className="text-xs text-gray-500">
-                            Your data will be anonymized and used only for approved medical research
-                          </p>
-                          {errors.agreeToDataSharing && (
-                            <p className="text-sm text-red-500">{errors.agreeToDataSharing}</p>
-                          )}
-                        </div>
-                      </div>
+                    <div className="flex items-start space-x-3">
+                      <Checkbox
+                        id="agreeToDataSharing"
+                        checked={formData.agreeToDataSharing}
+                        onCheckedChange={(checked) => updateFormData('agreeToDataSharing', checked as boolean)}
+                      />
+                      <Label htmlFor="agreeToDataSharing" className="text-sm leading-5">
+                        I consent to sharing my anonymized health data for research purposes
+                      </Label>
+                    </div>
+                    {errors.agreeToDataSharing && <p className="text-sm text-red-600 ml-7">{errors.agreeToDataSharing}</p>}
 
-                      <div className="flex items-start space-x-3">
-                        <Checkbox
-                          id="marketingEmails"
-                          checked={formData.marketingEmails}
-                          onCheckedChange={(checked) => handleInputChange('marketingEmails', !!checked)}
-                          className="mt-1"
-                        />
-                        <div className="space-y-1">
-                          <Label htmlFor="marketingEmails" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                            Send me updates about new features and research opportunities
-                          </Label>
-                          <p className="text-xs text-gray-500">
-                            Optional - you can unsubscribe anytime
-                          </p>
-                        </div>
-                      </div>
+                    <div className="flex items-start space-x-3">
+                      <Checkbox
+                        id="marketingEmails"
+                        checked={formData.marketingEmails}
+                        onCheckedChange={(checked) => updateFormData('marketingEmails', checked as boolean)}
+                      />
+                      <Label htmlFor="marketingEmails" className="text-sm leading-5">
+                        I would like to receive updates about research findings and platform news
+                      </Label>
                     </div>
                   </div>
 
@@ -428,8 +391,8 @@ export default function SignupPage() {
 
                   <div className="flex gap-3">
                     <Button 
-                      onClick={() => setStep(1)}
                       variant="outline"
+                      onClick={() => setStep(1)}
                       className="flex-1 py-6 text-lg border-[#00818A] text-[#00818A] hover:bg-[#C8FAFF]/20"
                     >
                       Back
@@ -437,7 +400,7 @@ export default function SignupPage() {
                     <Button 
                       onClick={handleSubmit}
                       disabled={isLoading}
-                      className="flex-1 bg-[#00818A] hover:bg-[#00636a] text-white py-6 text-lg font-semibold transition-all duration-300 hover:scale-[1.02] hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                      className="flex-1 bg-[#00818A] hover:bg-[#00636a] text-white py-6 text-lg font-semibold transition-all duration-300 hover:scale-[1.02] hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isLoading ? 'Creating Account...' : 'Create Account'}
                     </Button>

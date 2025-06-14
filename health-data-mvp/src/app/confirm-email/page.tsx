@@ -153,64 +153,66 @@ export default function ConfirmEmailPage() {
                 {emailConfirmed 
                   ? 'Email Confirmed!' 
                   : error 
-                  ? 'Confirmation Error' 
+                  ? 'Confirmation Error'
                   : 'Check Your Email'
                 }
               </CardTitle>
+              <p className="text-gray-600 mt-2">
+                {emailConfirmed ? (
+                  'Your email has been successfully confirmed. Redirecting to your dashboard...'
+                ) : error ? (
+                  'There was a problem confirming your email address.'
+                ) : (
+                  <>
+                    We&apos;ve sent a confirmation link to your email address.
+                    <br />
+                    Please click the link to verify your account.
+                  </>
+                )}
+              </p>
             </CardHeader>
 
-            <CardContent className="space-y-6">
+            <CardContent>
               {emailConfirmed ? (
-                <>
-                  <p className="text-center text-gray-600">
-                    Your email has been successfully confirmed. You'll be redirected to your dashboard in a moment...
-                  </p>
+                <div className="text-center">
                   <Button 
                     onClick={() => router.push('/dashboard')}
-                    className="w-full bg-[#00818A] hover:bg-[#00636a] text-white py-6 text-lg font-semibold"
+                    className="w-full bg-[#00818A] hover:bg-[#00636a] text-white py-6 text-lg font-semibold transition-all duration-300 hover:scale-[1.02] hover:shadow-lg"
                   >
                     Go to Dashboard
-                    <ArrowRight className="w-5 h-5 ml-2" />
+                    <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
-                </>
+                </div>
               ) : error ? (
                 <>
-                  <p className="text-center text-red-600">{error}</p>
+                  <div className="p-4 bg-red-50 border border-red-200 rounded-md mb-4">
+                    <p className="text-sm text-red-600">{error}</p>
+                  </div>
+                  
                   <div className="space-y-3">
                     <Button 
-                      onClick={handleResendEmail}
-                      disabled={!userEmail || isLoading}
-                      className="w-full bg-[#00818A] hover:bg-[#00636a] text-white py-6 text-lg font-semibold"
+                      onClick={() => window.location.reload()}
+                      variant="outline"
+                      className="w-full py-6 text-lg border-[#00818A] text-[#00818A] hover:bg-[#C8FAFF]/20"
                     >
-                      Resend Confirmation Email
+                      Try Again
                     </Button>
-                    <Link href="/signin" className="block">
-                      <Button 
-                        variant="outline"
-                        className="w-full py-6 text-lg border-[#00818A] text-[#00818A] hover:bg-[#C8FAFF]/20"
+                    
+                    <div className="text-center">
+                      <Link 
+                        href="/signin" 
+                        className="text-sm text-[#00818A] hover:underline"
                       >
                         Back to Sign In
-                      </Button>
-                    </Link>
+                      </Link>
+                    </div>
                   </div>
                 </>
               ) : (
                 <>
-                  <div className="space-y-4 text-center">
-                    <p className="text-gray-600">
-                      We've sent a confirmation email to:
-                    </p>
-                    <p className="font-semibold text-lg text-gray-900">
-                      {userEmail || 'your email address'}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      Please check your inbox and click the confirmation link to activate your account.
-                    </p>
-                  </div>
-
                   <div className="bg-blue-50 rounded-lg p-4">
                     <p className="text-sm text-blue-800">
-                      <strong>Didn't receive the email?</strong> Check your spam folder or click the button below to resend.
+                      <strong>Didn&apos;t receive the email?</strong> Check your spam folder or click the button below to resend.
                     </p>
                   </div>
 
