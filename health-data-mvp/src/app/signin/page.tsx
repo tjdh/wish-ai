@@ -28,17 +28,15 @@ export default function SignInPage() {
     try {
       await signIn(formData.email, formData.password);
       router.push('/dashboard');
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error('Sign in error:', err);
       
-      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
-      
-      if (errorMessage.includes('Invalid login credentials')) {
+      if (err.message?.includes('Invalid login credentials')) {
         setError('Invalid email or password');
-      } else if (errorMessage.includes('Email not confirmed')) {
+      } else if (err.message?.includes('Email not confirmed')) {
         setError('Please confirm your email before signing in');
       } else {
-        setError(errorMessage || 'Failed to sign in. Please try again.');
+        setError(err.message || 'Failed to sign in. Please try again.');
       }
     } finally {
       setIsLoading(false);
@@ -135,7 +133,7 @@ export default function SignInPage() {
                   
                   <div className="pt-4 border-t">
                     <p className="text-sm text-gray-600">
-                      Don&apos;t have an account?{' '}
+                      Don't have an account?{' '}
                       <Link href="/signup" className="text-[#00818A] hover:underline font-medium">
                         Sign up
                       </Link>

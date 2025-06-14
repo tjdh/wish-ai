@@ -119,7 +119,7 @@ export default function SignupPage() {
     
     try {
       // Import the signUp function dynamically to avoid SSR issues
-      const { signUp } = await import('@/lib/auth');
+      const { signUp, AuthError } = await import('@/lib/auth');
       
       const result = await signUp({
         email: formData.email,
@@ -141,7 +141,7 @@ export default function SignupPage() {
         window.location.href = '/dashboard';
       }
       
-    } catch (error: unknown) {
+    } catch (error: any) {
       console.error('Signup error:', error);
       
       // Handle specific auth errors
