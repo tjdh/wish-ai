@@ -24,9 +24,24 @@ export async function signUp(data: SignUpData) {
 
   try {
     // Get the current domain for redirect URL
-    const currentDomain = typeof window !== 'undefined' 
-      ? window.location.origin 
-      : 'http://localhost:3000';
+    // Priority: 1) Env var 2) window.location 3) fallback based on NODE_ENV
+    let currentDomain: string;
+    
+    if (process.env.NEXT_PUBLIC_SITE_URL) {
+      // Use explicit environment variable if set
+      currentDomain = process.env.NEXT_PUBLIC_SITE_URL;
+      console.log('Using NEXT_PUBLIC_SITE_URL:', currentDomain);
+    } else if (typeof window !== 'undefined') {
+      // Use current browser URL (works in development and production)
+      currentDomain = window.location.origin;
+      console.log('Using window.location.origin:', currentDomain);
+    } else {
+      // Server-side fallback based on environment
+      currentDomain = process.env.NODE_ENV === 'production'
+        ? 'https://wish-ai-mu.vercel.app'
+        : 'http://localhost:3000';
+      console.log('Using fallback for', process.env.NODE_ENV, ':', currentDomain);
+    }
 
     // Sign up the user with Supabase Auth
     // The metadata will be available in the trigger via NEW.raw_user_meta_data
