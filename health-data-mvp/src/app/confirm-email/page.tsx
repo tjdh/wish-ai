@@ -1,58 +1,53 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Mail, CheckCircle, AlertCircle, ArrowRight } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 export default function ConfirmEmailPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [emailConfirmed, setEmailConfirmed] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string>('');
-  const [resendEmail, setResendEmail] = useState<string>('');
-  const [isFromEmailLink, setIsFromEmailLink] = useState(false);
 
   useEffect(() => {
     const checkEmailConfirmation = async () => {
       const supabase = createClient();
       
       try {
-        // Check if this is the confirmation callback (when user clicks email link)
-        const error = searchParams.get('error');
-        const errorDescription = searchParams.get('error_description');
-        
-        if (error) {
-          setError(errorDescription || 'There was an error confirming your email.');
-          setIsLoading(false);
-          return;
-        }
-
-        // Check URL hash for confirmation tokens (Supabase puts them in hash)
+        // First check URL for confirmation token - this takes priority
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         const accessToken = hashParams.get('access_token');
         const type = hashParams.get('type');
 
         if (accessToken && type === 'signup') {
-          // This means user clicked the email link and was redirected here
-          setIsFromEmailLink(true);
+          // Email confirmed via link
           setEmailConfirmed(true);
           
-          // Clear the hash from URL for cleaner appearance
-          window.history.replaceState(null, '', window.location.pathname);
-          
-          setIsLoading(false);
-          return;
+          // Set up the session
+          const { error: sessionError } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: hashParams.get('refresh_token') || '',
+          });
+
+          if (sessionError) {
+            throw sessionError;
+          }
+
+          // Redirect to dashboard after a brief delay
+          setTimeout(() => {
+            router.push('/dashboard');
+          }, 2000);
+          return; // Exit early
         }
 
-        // If no confirmation token, check current user status
+        // If no confirmation token in URL, check if user exists but don't redirect
         const { data: { user } } = await supabase.auth.getUser();
         
         if (user?.email) {
@@ -60,28 +55,30 @@ export default function ConfirmEmailPage() {
           
           // Check if email is already confirmed
           if (user.email_confirmed_at) {
-            // Email was already confirmed, redirect to dashboard
+            // Email is already confirmed, redirect to dashboard
             router.push('/dashboard');
             return;
           }
+          // Otherwise, stay on this page and show the "check your email" message
+        } else {
+          // No user found, they might have been logged out or session expired
+          // Stay on this page to show the confirmation message
         }
 
       } catch (err) {
         console.error('Email confirmation error:', err);
-        setError('There was an error checking your email confirmation.');
+        setError('There was an error confirming your email. Please try again.');
       } finally {
         setIsLoading(false);
       }
     };
 
     checkEmailConfirmation();
-  }, [router, searchParams]);
+  }, [router]);
 
   const handleResendEmail = async () => {
-    const emailToUse = resendEmail || userEmail;
-    
-    if (!emailToUse || !emailToUse.includes('@')) {
-      alert('Please enter a valid email address.');
+    if (!userEmail) {
+      alert('Please enter your email address to resend the confirmation.');
       return;
     }
 
@@ -91,32 +88,18 @@ export default function ConfirmEmailPage() {
     try {
       const { error } = await supabase.auth.resend({
         type: 'signup',
-        email: emailToUse,
+        email: userEmail,
       });
 
       if (error) throw error;
 
+      // Show success message
       alert('Confirmation email sent! Please check your inbox.');
-      setResendEmail(''); // Clear the input
     } catch (err) {
       console.error('Resend email error:', err);
       setError('Failed to resend confirmation email. Please try again.');
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleReturnToDashboard = async () => {
-    const supabase = createClient();
-    
-    // First, ensure we're properly authenticated
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (session) {
-      router.push('/dashboard');
-    } else {
-      // If no session, go to sign in
-      router.push('/signin');
     }
   };
 
@@ -131,72 +114,9 @@ export default function ConfirmEmailPage() {
     );
   }
 
-  // Special view for when user lands here from email link
-  if (isFromEmailLink && emailConfirmed) {
-    return (
-      <main className="min-h-screen bg-gradient-to-b from-[#C8FAFF]/40 to-white">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-center">
-            <Image
-              src="/images/arx-logo.svg"
-              alt="arx logo"
-              width={120}
-              height={40}
-              priority
-            />
-          </div>
-        </div>
-
-        <div className="container mx-auto px-4 py-8">
-          <div className="max-w-md mx-auto">
-            <Card className="shadow-xl border-0">
-              <CardHeader className="text-center pb-6">
-                <div className="mx-auto mb-4 w-20 h-20 rounded-full flex items-center justify-center">
-                  <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center">
-                    <CheckCircle className="w-10 h-10 text-green-600" />
-                  </div>
-                </div>
-                <CardTitle className="text-2xl font-bold text-gray-900">
-                  Email Confirmed Successfully!
-                </CardTitle>
-              </CardHeader>
-
-              <CardContent className="space-y-6">
-                <div className="text-center space-y-4">
-                  <p className="text-gray-600">
-                    Your email has been confirmed. You can now close this window and return to the original tab to continue.
-                  </p>
-                  
-                  <div className="bg-blue-50 rounded-lg p-4">
-                    <p className="text-sm text-blue-800">
-                      <strong>You can close this tab</strong> and return to your original browser window to access your dashboard.
-                    </p>
-                  </div>
-
-                  <div className="pt-4">
-                    <p className="text-sm text-gray-500 mb-4">
-                      Or if you prefer, you can:
-                    </p>
-                    <Button 
-                      onClick={handleReturnToDashboard}
-                      className="w-full bg-[#00818A] hover:bg-[#00636a] text-white py-6 text-lg font-semibold"
-                    >
-                      Go to Dashboard
-                      <ArrowRight className="w-5 h-5 ml-2" />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </main>
-    );
-  }
-
-  // Regular confirmation waiting view
   return (
     <main className="min-h-screen bg-gradient-to-b from-[#C8FAFF]/40 to-white">
+      {/* Header */}
       <div className="container mx-auto px-4 py-6">
         <div className="flex items-center justify-center">
           <Image
@@ -209,12 +129,17 @@ export default function ConfirmEmailPage() {
         </div>
       </div>
 
+      {/* Main Content */}
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-md mx-auto">
           <Card className="shadow-xl border-0">
             <CardHeader className="text-center pb-6">
               <div className="mx-auto mb-4 w-20 h-20 rounded-full flex items-center justify-center">
-                {error ? (
+                {emailConfirmed ? (
+                  <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center">
+                    <CheckCircle className="w-10 h-10 text-green-600" />
+                  </div>
+                ) : error ? (
                   <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center">
                     <AlertCircle className="w-10 h-10 text-red-600" />
                   </div>
@@ -225,15 +150,40 @@ export default function ConfirmEmailPage() {
                 )}
               </div>
               <CardTitle className="text-2xl font-bold text-gray-900">
-                {error ? 'Confirmation Error' : 'Check Your Email'}
+                {emailConfirmed 
+                  ? 'Email Confirmed!' 
+                  : error 
+                  ? 'Confirmation Error' 
+                  : 'Check Your Email'
+                }
               </CardTitle>
             </CardHeader>
 
             <CardContent className="space-y-6">
-              {error ? (
+              {emailConfirmed ? (
+                <>
+                  <p className="text-center text-gray-600">
+                    Your email has been successfully confirmed. You'll be redirected to your dashboard in a moment...
+                  </p>
+                  <Button 
+                    onClick={() => router.push('/dashboard')}
+                    className="w-full bg-[#00818A] hover:bg-[#00636a] text-white py-6 text-lg font-semibold"
+                  >
+                    Go to Dashboard
+                    <ArrowRight className="w-5 h-5 ml-2" />
+                  </Button>
+                </>
+              ) : error ? (
                 <>
                   <p className="text-center text-red-600">{error}</p>
                   <div className="space-y-3">
+                    <Button 
+                      onClick={handleResendEmail}
+                      disabled={!userEmail || isLoading}
+                      className="w-full bg-[#00818A] hover:bg-[#00636a] text-white py-6 text-lg font-semibold"
+                    >
+                      Resend Confirmation Email
+                    </Button>
                     <Link href="/signin" className="block">
                       <Button 
                         variant="outline"
@@ -260,29 +210,40 @@ export default function ConfirmEmailPage() {
 
                   <div className="bg-blue-50 rounded-lg p-4">
                     <p className="text-sm text-blue-800">
-                      <strong>Didn't receive the email?</strong> Check your spam folder or use the form below to resend.
+                      <strong>Didn't receive the email?</strong> Check your spam folder or click the button below to resend.
                     </p>
                   </div>
 
                   <div className="space-y-3">
-                    <div className="space-y-2">
-                      <Input
-                        type="email"
-                        placeholder="Enter your email address"
-                        value={resendEmail}
-                        onChange={(e) => setResendEmail(e.target.value)}
-                        className="w-full"
-                        defaultValue={userEmail}
-                      />
+                    {userEmail && (
                       <Button 
                         onClick={handleResendEmail}
                         variant="outline"
                         disabled={isLoading}
                         className="w-full py-6 text-lg border-[#00818A] text-[#00818A] hover:bg-[#C8FAFF]/20"
                       >
-                        {isLoading ? 'Sending...' : 'Resend Confirmation Email'}
+                        Resend Confirmation Email
                       </Button>
-                    </div>
+                    )}
+                    
+                    {!userEmail && (
+                      <div className="space-y-2">
+                        <input
+                          type="email"
+                          placeholder="Enter your email"
+                          className="w-full px-4 py-3 border rounded-lg"
+                          onChange={(e) => setUserEmail(e.target.value)}
+                        />
+                        <Button 
+                          onClick={handleResendEmail}
+                          variant="outline"
+                          disabled={!userEmail || isLoading}
+                          className="w-full py-6 text-lg border-[#00818A] text-[#00818A] hover:bg-[#C8FAFF]/20"
+                        >
+                          Resend Confirmation Email
+                        </Button>
+                      </div>
+                    )}
                   </div>
 
                   <div className="text-center">
