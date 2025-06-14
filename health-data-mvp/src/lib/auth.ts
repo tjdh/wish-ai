@@ -23,12 +23,18 @@ export async function signUp(data: SignUpData) {
   const supabase = createClient()
 
   try {
+    // Get the current domain for redirect URL
+    const currentDomain = typeof window !== 'undefined' 
+      ? window.location.origin 
+      : 'http://localhost:3000';
+
     // Sign up the user with Supabase Auth
     // The metadata will be available in the trigger via NEW.raw_user_meta_data
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
       options: {
+        emailRedirectTo: `${currentDomain}/email-confirmed`,
         data: {
           first_name: data.firstName,
           last_name: data.lastName,
